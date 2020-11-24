@@ -19,14 +19,18 @@ def process_request_in_app(request, app):
 
         data = request.form or request.data
 
-        with app.test_request_context(method=request.method,
-                                      base_url=request.base_url,
-                                      path=request.path,
-                                      query_string=request.query_string,
-                                      headers=headers,
-                                      data=data,
-                                      ):
-            return app.full_dispatch_request()
+        ctx = app.test_request_context(
+            method=request.method,
+            base_url=request.base_url,
+            path=request.path,
+            query_string=request.query_string,
+            headers=headers,
+            data=data)
+        ctx.request.data = data
+        ctx.push()
+        resp = app.full_dispatch_request()
+        ctx.pop()
+        return resp
 
 
 def python38_request_bug_app(request):
