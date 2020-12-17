@@ -1,4 +1,5 @@
 import flask
+import json
 import werkzeug.datastructures
 
 
@@ -7,11 +8,23 @@ app = flask.Flask(__name__)
 @app.route('/reflect', methods=['POST'])
 def reflect():
     request = flask.request
-    return request.data, 200
+
+    data = (json.dumps(request.data)
+            if isinstance(request.data, dict)
+            else request.data.decode('utf-8'))
+
+    content = flask.jsonify({
+        'data': data,
+        'form': request.form,
+        'json': request.json,
+    })
+
+    return content, 200
 
 
 def process_request_in_app(request, app):
     # source: https://stackoverflow.com/a/55576232/1237919
+
     with app.app_context():
         headers = werkzeug.datastructures.Headers()
         for key, value in request.headers.items():
@@ -25,7 +38,8 @@ def process_request_in_app(request, app):
             path=request.path,
             query_string=request.query_string,
             headers=headers,
-            data=data)
+            data=data,
+            )
         ctx.request.data = data
         ctx.push()
         resp = app.full_dispatch_request()

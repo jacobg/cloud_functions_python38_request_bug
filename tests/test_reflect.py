@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import time
@@ -20,8 +21,45 @@ def flask_app_server():
     yield
     proc.terminate()
 
-def test_reflect():
+def test_reflect_json():
     response = requests.post("http://localhost:8080/reflect", json={'foo': 'bar'})
 
     assert response.status_code == 200
-    assert response.content == b'{"foo": "bar"}'
+
+    content = json.loads(response.content)
+
+    assert content == {
+      'data': '{"foo": "bar"}',
+      'form': {},
+      'json': {"foo": "bar"}
+    }
+
+def test_reflect_form():
+    response = requests.post("http://localhost:8080/reflect", data={'foo': 'bar'})
+
+    assert response.status_code == 200
+
+    content = json.loads(response.content)
+
+    assert content == {
+      'data': '{"foo": "bar"}',
+      'form': {"foo": "bar"},
+      'json': None
+    }
+
+def test_reflect_binary_data():
+    response = requests.post(
+      "http://localhost:8080/reflect",
+      data=b'foobar',
+      headers={'Content-Type': 'application/octet-stream'}
+    )
+
+    assert response.status_code == 200
+
+    content = json.loads(response.content)
+
+    assert content == {
+      'data': 'foobar',
+      'form': {},
+      'json': None
+    }
