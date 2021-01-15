@@ -42,7 +42,7 @@ def test_reflect_form():
     content = json.loads(response.content)
 
     assert content == {
-      'data': '{"foo": "bar"}',
+      'data': '',
       'form': {"foo": "bar"},
       'json': None
     }

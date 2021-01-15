@@ -28,23 +28,24 @@ def process_request_in_app(request, app):
     with app.app_context():
         headers = werkzeug.datastructures.Headers()
         for key, value in request.headers.items():
+            # Do not forward 'Transfer-Encoding' header, as explained in the following Cloud Function issue:
+            # https://issuetracker.google.com/issues/174365298
+            if key == 'Transfer-Encoding':
+                continue
             headers.add(key, value)
 
         data = request.form or request.data
 
-        ctx = app.test_request_context(
+        with app.test_request_context(
             method=request.method,
             base_url=request.base_url,
             path=request.path,
             query_string=request.query_string,
             headers=headers,
             data=data,
-            )
-        ctx.request.data = data
-        ctx.push()
-        resp = app.full_dispatch_request()
-        ctx.pop()
-        return resp
+        ):
+            resp = app.full_dispatch_request()
+            return resp
 
 
 def python38_request_bug_app(request):
